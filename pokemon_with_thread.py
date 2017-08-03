@@ -4,10 +4,35 @@ import requests
 import time
 
 
+class Fight(Thread):
+    def __init__(self,pokemon1,pokemon2):
+        super().__init__()
+        self.pokemon1 = pokemon1
+        self.pokemon2 = pokemon2
+        self.winner = None
+
+
+    def get_winner(self):
+        return self.winner
+    def run(self):
+        while self.pokemon1.can > 0 and self.pokemon2.can > 0:
+            self.pokemon1.hasarVer(self.pokemon2)
+            if self.pokemon2.can > 0:
+                self.pokemon2.hasarVer(self.pokemon1)
+
+
+        if self.pokemon1.can > 0:
+            self.winner = self.pokemon1
+        else:
+            self.winner = self.pokemon2
+
+
+
 class PokemonGetThread(Thread):
     is_completed = False
     def __init__(self,pokemon_uri,pokemon):
-        Thread.__init__(self)
+        super().__init__()
+
         self.pokemon = pokemon
         self.pokemon_url = pokemon_uri
         self.pokemonNesnesi = None
@@ -31,6 +56,20 @@ class PokemonGetThread(Thread):
             pokemonjson['height'],
             yetenekler
         )
+        for biri in pokemonjson['stats']:
+            statName = biri['stat']['name']
+
+            if statName == "speed":
+                self.pokemonNesnesi.hiz = biri['base_stat']
+            elif statName == "defense":
+                self.pokemonNesnesi.savunma = biri['base_stat']
+            elif statName == "attack":
+                self.pokemonNesnesi.saldiri = biri['base_stat'] / 10
+            elif statName == "hp":
+                self.pokemonNesnesi.can = biri['base_stat']
+
+            self.pokemonNesnesi.resim = pokemonjson["sprites"]["front_default"]
+
         self.is_completed = True
 
 
@@ -57,6 +96,17 @@ class Pokemonlar(Thread):
                 if i.get("thread").is_completed_thread() is False:
                     all_completed = False
             time.sleep(5)
+
+        all_fight_completed = True
+        #while all_fight_completed is False:
+        for i in range(0,len(pokemonlarThread),2):
+            pokemon1 = pokemonlarThread[i]
+            pokemon2 = pokemonlarThread[i+1]
+            fight = Fight(pokemon1.get("thread").get_pokemon(),pokemon2.get("thread").get_pokemon())
+            fight.start()
+            while fight.get_winner() is None:
+                time.sleep(1)
+            print(fight.get_winner().adi)
 
 if __name__ == '__main__':
     p = Pokemonlar()
