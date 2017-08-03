@@ -1,5 +1,5 @@
 from threading import Thread
-
+from pokemon import Pokemon
 import requests
 import time
 
@@ -10,11 +10,27 @@ class PokemonGetThread(Thread):
         Thread.__init__(self)
         self.pokemon = pokemon
         self.pokemon_url = pokemon_uri
+        self.pokemonNesnesi = None
 
     def is_completed_thread(self):
         return self.is_completed
+
+    def get_pokemon(self):
+        return self.pokemonNesnesi
+
     def run(self):
         pokemonjson = requests.get(self.pokemon_url).json()
+        yetenekler = []
+        for yetenek in pokemonjson['abilities']:
+            if yetenek["ability"] != None and yetenek["ability"]["name"] != None:
+                yetenekler.append(yetenek["ability"]["name"])
+
+        self.pokemonNesnesi = Pokemon(
+            pokemonjson['name'],
+            pokemonjson['weight'],
+            pokemonjson['height'],
+            yetenekler
+        )
         self.is_completed = True
 
 
